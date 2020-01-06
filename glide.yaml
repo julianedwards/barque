@@ -1,0 +1,9 @@
+package: github.com/evergreen-ci/barque
+import:
+- package: github.com/mongodb/grip
+  subpackages:
+  - level
+- package: github.com/pkg/errors
+  version: ^0.8.1
+- package: github.com/urfave/cli
+  version: ^2.1.1

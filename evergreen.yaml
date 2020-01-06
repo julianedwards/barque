@@ -1,0 +1,210 @@
+stepback: false
+ignore:
+  - "*.rst"
+
+#######################################
+#         YAML Templates              #
+#######################################
+variables:
+  - &run-build
+    # runs a build operations. The task name in evergreen should
+    # correspond to a make target for the build operation.
+    name: test
+    commands:
+      - func: run-make
+        vars: { target: "${task_name}" }
+
+#######################################
+#              Functions              #
+#######################################
+functions:
+  get-project:
+    command: git.get_project
+    type: setup
+    params:
+      directory: gopath/src/github.com/evergreen-ci/barque
+  parse-results:
+    command: gotest.parse_files
+    type: setup
+    params:
+      files:
+        - "gopath/src/github.com/evergreen-ci/barque/build/output.*"
+  run-make:
+    command: subprocess.exec
+    type: test
+    params:
+      working_dir: gopath/src/github.com/evergreen-ci/barque/
+      binary: make
+      args: ["${make_args|}", "${target}"]
+      add_expansions_to_env: true
+      env:
+        LDAP_USER: ${ldap_user}
+        LDAP_PASSWORD: ${ldap_password}
+        GOPATH: ${workdir}/gopath
+        USERPROFILE: C:\\Users\\Administrator
+        VENDOR_PKG: "github.com/${trigger_repo_owner}/${trigger_repo_name}"
+        VENDOR_REVISION: ${trigger_revision}
+  set-up-mongodb:
+    - command: subprocess.exec
+      type: setup
+      params:
+        add_expansions_to_env: true
+        working_dir: gopath/src/github.com/evergreen-ci/barque/
+        command: make get-mongodb
+    - command: subprocess.exec
+      type: setup
+      params:
+        background: true
+        working_dir: gopath/src/github.com/evergreen-ci/barque/
+        add_expansions_to_env: true
+        command: make start-mongod
+    - command: subprocess.exec
+      type: setup
+      params:
+        working_dir: gopath/src/github.com/evergreen-ci/barque/
+        add_expansions_to_env: true
+        command: make check-mongod
+    - command: subprocess.exec
+      type: setup
+      params:
+        add_expansions_to_env: true
+        working_dir: gopath/src/github.com/evergreen-ci/barque/
+        command: make init-rs
+
+#######################################
+#                Tasks                #
+#######################################
+
+tasks:
+  - name: dist
+    tags: ["dist"]
+    commands:
+      - func: get-project
+      - func: run-make
+        vars: { target: "${task_name}" }
+      - command: s3.put
+        type: system
+        params:
+          aws_key: ${aws_key}
+          aws_secret: ${aws_secret}
+          local_file: gopath/src/github.com/evergreen-ci/barque/build/${task_name}.tar.gz
+          remote_file: sink/${build_id}/barque-${task_name}-${revision}.tar.gz
+          bucket: mciuploads
+          content_type: application/x-gzip
+          permissions: public-read
+          display_name: dist.tar.gz (standard)
+
+  - <<: *run-build
+    tags: ["test"]
+    name: test-barque
+  - <<: *run-build
+    tags: ["test"]
+    name: test-operations
+  - <<: *run-build
+    tags: ["test"]
+    name: test-util
+
+  - <<: *run-build
+    tags: ["lint"]
+    name: lint-barque
+  - <<: *run-build
+    tags: ["lint"]
+    name: lint-operations
+  - <<: *run-build
+    tags: ["lint"]
+    name: lint-util
+
+task_groups:
+  - name: lintGroup
+    tasks: [ ".lint"]
+    max_hosts: 1
+    setup_group:
+      - func: get-project
+    setup_task:
+      - func: run-make
+        vars: { target: "clean-results" }
+    teardown_task:
+      - func: parse-results
+  - name: testGroup
+    tasks: [ ".test"]
+    max_hosts: 1
+    setup_group_can_fail_task: true
+    share_processes: true
+    setup_group:
+      - func: get-project
+      - func: set-up-mongodb
+      - func: run-make
+        vars: { target: "cedar" }
+    setup_task:
+      - func: run-make
+        vars: { target: "clean-results" }
+    teardown_task:
+      - func: parse-results
+    teardown_group:
+      - command: shell.exec
+        type: setup
+        params:
+          script: "rm -rf ~/.aws"
+
+#######################################
+#           Buildvariants             #
+#######################################
+buildvariants:
+  - name: race-detector
+    display_name: Race Detector (Arch Linux)
+    expansions:
+      RACE_DETECTOR: true
+      MONGODB_URL: https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu1804-4.0.13.tgz
+      GO_BIN_PATH: /opt/golang/go1.12/bin/go
+      GOROOT: /opt/golang/go1.12
+    run_on:
+      - archlinux-test
+    tasks: [ "testGroup" ]
+
+  - name: lint
+    display_name: Lint (Arch Linux)
+    expansions:
+      GO_BIN_PATH: /opt/golang/go1.12/bin/go
+      GOROOT: /opt/golang/go1.12
+      DISABLE_COVERAGE: true
+    run_on:
+      - archlinux-test
+    tasks: [ "lintGroup" ]
+
+  - name: ubuntu1604
+    display_name: Ubuntu 16.04
+    expansions:
+      DISABLE_COVERAGE: true
+      GO_BIN_PATH: /opt/golang/go1.9/bin/go
+      GOROOT: /opt/golang/go1.9
+      MONGODB_URL: https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu1604-4.0.13.tgz
+    run_on:
+      - ubuntu1604-test
+    tasks: [ "dist", "testGroup" ]
+
+  - name: macos
+    display_name: macOS
+    expansions:
+      DISABLE_COVERAGE: true
+      GO_BIN_PATH: /opt/golang/go1.12/bin/go
+      GOROOT: /opt/golang/go1.12
+      MONGODB_URL: https://fastdl.mongodb.org/osx/mongodb-osx-ssl-x86_64-4.0.13.tgz
+    run_on:
+      - macos-1014
+    tasks: [ "testGroup" ]
+
+  - name: windows
+    display_name: Windows
+    run_on:
+      - windows-64-vs2017-test
+      - windows-64-vs2015-test
+      - windows-64-vs2015-small
+      - windows-64-vs2017-compile
+      - windows-64-vs2015-compile
+      - windows-64-vs2015-large
+    expansions:
+      MONGODB_URL: https://fastdl.mongodb.org/win32/mongodb-win32-x86_64-2008plus-ssl-4.0.13.zip
+      DISABLE_COVERAGE: true
+      GO_BIN_PATH: "C:\\golang\\go1.9\\bin\\go"
+      GOROOT: "C:\\golang\\go1.9"
+    tasks: [ "testGroup" ]
