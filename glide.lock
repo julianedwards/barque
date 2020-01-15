@@ -1,0 +1,25 @@
+hash: 75c7ee1fdb954853d3ab8f1b62b85ad7c1a8719da2d2396238f0eba863fb86e0
+updated: 2016-06-16T14:14:58.047959949-04:00
+imports:
+- name: gopkg.in/yaml.v2
+  version: 25c4ec802a7d637f88d584ab26798e94ad14c13b
+- name: github.com/evergreen-ci/pail
+  version: 055ae19f1c325c86bfebb1678395242f26b2ab8c
+- name: github.com/mongodb/amboy
+  version: a323bf090a252d61da5944938fc464a2538cc3dd
+- name: github.com/mongodb/grip
+  version: 584e10f183651989291528fc432824587903b6fd
+- name: github.com/mongodb/anser
+  version: dfd9f3040d44054bcd33f4006b73edd78be0f5fa
+- name: github.com/mongodb/jasper
+  version: 76466aca6b613c14629889d49c53a5e41efd0655
+- name: github.com/evergreen-ci/gimlet
+  version: 2180fc22266fe2030e026816640a5e395abffd33
+- name: go.mongodb.org/mongo-driver
+  version: 305bc4a5e4131420fe8ba5628e6faa9e6ade4e86
+- name: github.com/evergreen-ci/pail
+  version: 055ae19f1c325c86bfebb1678395242f26b2ab8c
+- name: github.com/pkg/errors
+  version: 856c240a51a2bf8fb8269ea7f3f9b046aadde36e
+- name: github.com/urfave/cli
+  version: 01857ac33766ce0c93856370626f9799281c14f4

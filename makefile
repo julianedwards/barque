@@ -82,7 +82,7 @@ $(buildDir)/.lintSetup:$(lintDeps) $(buildDir)/
 $(name):$(buildDir)/$(name)
 	@[ -e $@ ] || ln -s $<
 $(buildDir)/$(name):$(srcFiles)
-	$(goEnv) $(gobin) build -ldflags "-X github.com/evergreen-ci/cedar.BuildRevision=`git rev-parse HEAD`" -o $@ cmd/$(name)/$(name).go
+	$(goEnv) $(gobin) build -ldflags "-X github.com/evergreen-ci/baqrque.BuildRevision=`git rev-parse HEAD`" -o $@ cmd/$(name)/$(name).go
 $(buildDir)/generate-points:cmd/generate-points/generate-points.go
 	$(goEnv) $(gobin) build -o $@ $<
 generate-points:$(buildDir)/generate-points
@@ -121,6 +121,14 @@ phony += lint lint-deps build build-race race test coverage coverage-html list-r
 # start vendoring configuration
 #    begin with configuration of dependencies
 vendor-clean:
+	rm -rf vendor/github.com/mongodb/jasper/vendor/github.com/evergreen-ci/certdepot/vendor/github.com/mongodb/anser/
+	rm -rf vendor/github.com/mongodb/jasper/vendor/github.com/evergreen-ci/poplar/vendor/github.com/evergreen-ci/pail/
+	rm -rf vendor/github.com/mongodb/jasper/vendor/github.com/evergreen-ci/poplar/vendor/github.com/mongodb/mongo-go-driver/
+	rm -rf vendor/github.com/mongodb/jasper/vendor/github.com/evergreen-ci/poplar/vendor/gopkg.in/yaml.v2/
+	rm -rf vendor/github.com/mongodb/jasper/vendor/github.com/evergreen-ci/timber/vendor/gopkg.in/yaml.v2
+	rm -rf vendor/github.com/mongodb/jasper/vendor/go.mongodb.org/mongo-driver/
+	rm -rf vendor/github.com/mongodb/jasper/vendor/github.com/urfave/cli/
+	rm -rf vendor/github.com/mongodb/jasper/vendor/gopkg.in/mgo.v2/
 	rm -rf vendor/github.com/evergreen-ci/gimlet/vendor/github.com/davecgh/
 	rm -rf vendor/github.com/evergreen-ci/gimlet/vendor/github.com/mongodb/grip/
 	rm -rf vendor/github.com/evergreen-ci/gimlet/vendor/github.com/pkg/errors/
@@ -128,6 +136,8 @@ vendor-clean:
 	rm -rf vendor/github.com/evergreen-ci/gimlet/vendor/github.com/stretchr/
 	rm -rf vendor/github.com/evergreen-ci/gimlet/vendor/gopkg.in/yaml.v2/
 	rm -rf vendor/github.com/evergreen-ci/pail/vendor/
+	rm -rf vendor/github.com/mongodb/amboy/vendor/github.com/pkg/errors/
+	rm -rf vendor/github.com/mongodb/amboy/vendor/gopkg.in/yaml.v2/
 	rm -rf vendor/github.com/mongodb/amboy/vendor/github.com/aws/aws-sdk-go
 	rm -rf vendor/github.com/mongodb/amboy/vendor/github.com/davecgh/go-spew
 	rm -rf vendor/github.com/mongodb/amboy/vendor/github.com/evergreen-ci/gimlet
@@ -138,7 +148,6 @@ vendor-clean:
 	rm -rf vendor/github.com/mongodb/amboy/vendor/github.com/urfave/cli/
 	rm -rf vendor/github.com/mongodb/amboy/vendor/go.mongodb.org/mongo-driver
 	rm -rf vendor/github.com/mongodb/amboy/vendor/golang.org/x/net/
-	rm -rf vendor/github.com/mongodb/amboy/vendor/gonum.org/v1/gonum
 	rm -rf vendor/github.com/mongodb/amboy/vendor/gopkg.in/mgo.v2
 	rm -rf vendor/github.com/mongodb/anser/vendor/github.com/mongodb/amboy
 	rm -rf vendor/github.com/mongodb/anser/vendor/github.com/mongodb/grip
