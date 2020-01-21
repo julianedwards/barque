@@ -63,7 +63,6 @@ func (e *envImpl) initDB(ctx context.Context) error {
 
 func (e *envImpl) initLocalQueue(ctx context.Context) error {
 	e.localQueue = queue.NewLocalLimitedSize(e.conf.NumWorkers, 1024)
-	grip.Infof("configured local queue with %d workers", e.conf.NumWorkers)
 
 	e.RegisterCloser("local-queue", true, func(ctx context.Context) error {
 		if !amboy.WaitInterval(ctx, e.localQueue, 10*time.Millisecond) {
@@ -78,6 +77,10 @@ func (e *envImpl) initLocalQueue(ctx context.Context) error {
 		return nil
 	})
 
+	if err := e.localQueue.SetRunner(pool.NewAbortablePool(e.conf.NumWorkers, e.localQueue)); err != nil {
+		return errors.Wrap(err, "problem configuring worker pool for local queue")
+	}
+
 	if err := e.localQueue.Start(ctx); err != nil {
 		return errors.Wrap(err, "problem starting remote queue")
 	}
@@ -89,7 +92,6 @@ func (e *envImpl) initLocalQueue(ctx context.Context) error {
 
 func (e *envImpl) initRemoteQueue(ctx context.Context) error {
 	opts := e.conf.GetQueueOptions()
-
 	args := queue.MongoDBQueueCreationOptions{
 		Size:    e.conf.NumWorkers,
 		Name:    e.conf.QueueName,

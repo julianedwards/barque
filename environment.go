@@ -70,7 +70,7 @@ type envImpl struct {
 	groupReporter  reporting.Reporter
 	closers        []closerOp
 	context        context.Context
-	mutex          *sync.RWMutex
+	mutex          sync.RWMutex
 }
 
 type closerOp struct {
