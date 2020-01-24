@@ -17,6 +17,7 @@ type Configuration struct {
 	QueueName          string
 	MongoDBDialTimeout time.Duration
 	SocketTimeout      time.Duration
+	DisableQueues      bool
 	NumWorkers         int
 }
 

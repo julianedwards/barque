@@ -31,6 +31,7 @@ func buildApp() *cli.App {
 	app.Commands = []cli.Command{
 		operations.Hello(),
 		operations.Service(),
+		operations.Admin(),
 	}
 
 	// These are global options. Use this to configure logging or

@@ -33,6 +33,7 @@ func Service() cli.Command {
 		Action: func(c *cli.Context) error {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
+
 			go signalListener(ctx, cancel)
 
 			conf := &barque.Configuration{

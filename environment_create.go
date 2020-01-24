@@ -24,14 +24,24 @@ func NewEnvironment(ctx context.Context, conf *Configuration) (Environment, erro
 		return nil, errors.WithStack(err)
 	}
 
-	for _, initFn := range []func(context.Context) error{
+	initFuncs := []CloserFunc{
+		// init functions have the same
+		// type name
 		env.initDB,
-		env.initLocalQueue,
-		env.initRemoteQueue,
-		env.initQueueGroup,
+	}
+
+	if !conf.DisableQueues {
+		initFuncs = append(initFuncs,
+			env.initLocalQueue,
+			env.initRemoteQueue,
+			env.initQueueGroup)
+	}
+
+	initFuncs = append(initFuncs,
 		env.initJasper,
-		env.initContext,
-	} {
+		env.initContext)
+
+	for _, initFn := range initFuncs {
 		if err := initFn(ctx); err != nil {
 			return nil, errors.WithStack(err)
 		}
