@@ -4,7 +4,7 @@ imports:
 - name: gopkg.in/yaml.v2
   version: 25c4ec802a7d637f88d584ab26798e94ad14c13b
 - name: github.com/evergreen-ci/pail
-  version: 055ae19f1c325c86bfebb1678395242f26b2ab8c
+  version: 77641ef9b25997311b0e788a3344c235ed76bc3b
 - name: github.com/mongodb/amboy
   version: a323bf090a252d61da5944938fc464a2538cc3dd
 - name: github.com/mongodb/grip
@@ -23,3 +23,5 @@ imports:
   version: 856c240a51a2bf8fb8269ea7f3f9b046aadde36e
 - name: github.com/urfave/cli
   version: 01857ac33766ce0c93856370626f9799281c14f4
+- name: github.com/mongodb/curator
+  version: 1c225605b15d46a6bcde7e5472dce7a54eb1c011

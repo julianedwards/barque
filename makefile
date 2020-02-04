@@ -129,6 +129,11 @@ vendor-clean:
 	rm -rf vendor/github.com/mongodb/jasper/vendor/go.mongodb.org/mongo-driver/
 	rm -rf vendor/github.com/mongodb/jasper/vendor/github.com/urfave/cli/
 	rm -rf vendor/github.com/mongodb/jasper/vendor/gopkg.in/mgo.v2/
+	rm -rf vendor/github.com/mongodb/curator/vendor/
+	rm -rf vendor/github.com/mongodb/curator/operations/
+	rm -rf vendor/github.com/mongodb/curator/greenbay/
+	rm -rf vendor/github.com/mongodb/curator/cmd/
+	rm -rf vendor/github.com/mongodb/curator/*.{go,yaml,rst,lock}
 	rm -rf vendor/github.com/evergreen-ci/gimlet/vendor/github.com/davecgh/
 	rm -rf vendor/github.com/evergreen-ci/gimlet/vendor/github.com/mongodb/grip/
 	rm -rf vendor/github.com/evergreen-ci/gimlet/vendor/github.com/pkg/errors/

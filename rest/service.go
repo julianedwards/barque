@@ -1,10 +1,14 @@
 package rest
 
 import (
+	"net/http"
+
 	"github.com/evergreen-ci/barque"
 	"github.com/evergreen-ci/barque/model"
 	"github.com/evergreen-ci/gimlet"
 	"github.com/evergreen-ci/gimlet/ldap"
+	"github.com/mongodb/curator/repobuilder"
+	"github.com/mongodb/grip"
 	"github.com/pkg/errors"
 )
 
@@ -73,4 +77,13 @@ func (s *Service) setup() error {
 	}
 
 	return nil
+}
+
+func (s *Service) addRepobuilderJob(rw http.ResponseWriter, r *http.Request) {
+	opts := &repobuilder.JobOptions{}
+	err := gimlet.GetJSON(r.Body, opts)
+	if err != nil {
+		panic(err)
+	}
+	grip.Info(opts)
 }
