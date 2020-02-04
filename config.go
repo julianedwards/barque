@@ -9,8 +9,6 @@ import (
 	"github.com/mongodb/grip"
 )
 
-var BuildRevision = ""
-
 type Configuration struct {
 	MongoDBURI         string
 	DatabaseName       string
