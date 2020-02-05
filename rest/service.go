@@ -1,14 +1,10 @@
 package rest
 
 import (
-	"net/http"
-
 	"github.com/evergreen-ci/barque"
 	"github.com/evergreen-ci/barque/model"
 	"github.com/evergreen-ci/gimlet"
 	"github.com/evergreen-ci/gimlet/ldap"
-	"github.com/mongodb/curator/repobuilder"
-	"github.com/mongodb/grip"
 	"github.com/pkg/errors"
 )
 
@@ -25,6 +21,12 @@ func New(env barque.Environment) (*gimlet.APIApp, error) {
 		return nil, errors.WithStack(err)
 	}
 	app := gimlet.NewApp()
+
+	app.SetPrefix("rest")
+
+	s.addMiddleware(app)
+	s.addRoutes(app)
+
 	return app, nil
 }
 
@@ -36,6 +38,17 @@ func (s *Service) setup() error {
 		return errors.WithStack(err)
 	}
 	s.Conf = conf
+
+	s.umconf = gimlet.UserMiddlewareConfiguration{
+		HeaderKeyName:  barque.APIKeyHeader,
+		HeaderUserName: barque.APIUserHeader,
+		CookieName:     barque.AuthTokenCookie,
+		CookiePath:     "/",
+		CookieTTL:      barque.TokenExpireAfter,
+	}
+	if err = s.umconf.Validate(); err != nil {
+		return errors.New("programmer error; invalid user manager configuration")
+	}
 
 	if s.Conf.LDAP.URL != "" {
 		s.UserManager, err = ldap.NewUserService(ldap.CreationOpts{
@@ -79,11 +92,16 @@ func (s *Service) setup() error {
 	return nil
 }
 
-func (s *Service) addRepobuilderJob(rw http.ResponseWriter, r *http.Request) {
-	opts := &repobuilder.JobOptions{}
-	err := gimlet.GetJSON(r.Body, opts)
-	if err != nil {
-		panic(err)
-	}
-	grip.Info(opts)
+func (s *Service) addMiddleware(app *gimlet.APIApp) {
+	app.AddMiddleware(gimlet.MakeRecoveryLogger())
+	app.AddMiddleware(gimlet.UserMiddleware(s.UserManager, s.umconf))
+	app.AddMiddleware(gimlet.NewAuthenticationHandler(gimlet.NewBasicAuthenticator(nil, nil), s.UserManager))
+}
+
+func (s *Service) addRoutes(app *gimlet.APIApp) {
+	checkUser := gimlet.NewRequireAuthHandler()
+
+	app.AddRoute("/admin/status").Version(1).Get().Handler(s.statusHandler)
+	app.AddRoute("/repobuilder").Version(1).Post().Wrap(checkUser).Handler(s.addRepobuilderJob)
+	app.AddRoute("/repobuilder/check/{job_id}").Version(1).Post().Wrap(checkUser).Handler(s.checkRepobuilderJob)
 }

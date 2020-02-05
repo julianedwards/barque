@@ -24,4 +24,4 @@ imports:
 - name: github.com/urfave/cli
   version: 01857ac33766ce0c93856370626f9799281c14f4
 - name: github.com/mongodb/curator
-  version: 1c225605b15d46a6bcde7e5472dce7a54eb1c011
+  version: 5dc512d68d83b44960707b3cc7e188fdb829d1f9

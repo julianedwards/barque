@@ -7,6 +7,7 @@ import (
 	"syscall"
 
 	"github.com/evergreen-ci/barque"
+	"github.com/evergreen-ci/barque/rest"
 	"github.com/evergreen-ci/gimlet"
 	"github.com/mongodb/amboy"
 	amboyRest "github.com/mongodb/amboy/rest"
@@ -18,16 +19,29 @@ import (
 )
 
 func Service() cli.Command {
-	const adminPortFlagName = "adminPort"
+	const (
+		adminPortFlagName = "adminPort"
+		servicePortFlag   = "port"
+
+		envVarRESTPort      = "BARQUE_REST_PORT"
+		envVarAdminRESTPort = "BARQUE_ADMIN_REST_PORT"
+	)
 
 	return cli.Command{
 		Name:  "service",
 		Usage: "run the barque service",
 		Flags: mergeFlags(baseFlags(), dbFlags(
 			cli.IntFlag{
-				Name:  adminPortFlagName,
-				Value: 2285,
-				Usage: "number of admin port",
+				Name:   joinFlagNames(servicePortFlag, "p"),
+				Usage:  "specify a port to run the REST service on",
+				Value:  3000,
+				EnvVar: envVarRESTPort,
+			},
+			cli.IntFlag{
+				Name:   adminPortFlagName,
+				Value:  2285,
+				Usage:  "number of admin port",
+				EnvVar: envVarAdminRESTPort,
 			},
 		)),
 		Action: func(c *cli.Context) error {
@@ -54,6 +68,12 @@ func Service() cli.Command {
 				return errors.WithStack(err)
 			}
 
+			appWait, err := runRestService(ctx, env, c.Int(servicePortFlag))
+			if err != nil {
+				return errors.WithStack(err)
+			}
+
+			appWait(ctx)
 			adminWait(ctx)
 
 			return env.Close(ctx)
@@ -74,6 +94,23 @@ func signalListener(ctx context.Context, trigger context.CancelFunc) {
 	}
 
 	trigger()
+}
+
+func runRestService(ctx context.Context, env barque.Environment, port int) (gimlet.WaitFunc, error) {
+	app, err := rest.New(env)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	if err := app.SetHost("localhost"); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	if err := app.SetPort(port); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return app.BackgroundRun(ctx)
 }
 
 func runAdminService(ctx context.Context, env barque.Environment, port int) (gimlet.WaitFunc, error) {
