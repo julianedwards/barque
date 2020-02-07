@@ -18,19 +18,20 @@ const (
 )
 
 type Configuration struct {
-	ID        string                    `bson:"_id" json:"id" yaml:"id"`
-	Splunk    send.SplunkConnectionInfo `bson:"splunk" json:"splunk" yaml:"splunk"`
-	Flags     OperationalFlags          `bson:"flags" json:"flags" yaml:"flags"`
-	Slack     SlackConfig               `bson:"slack" json:"slack" yaml:"slack"`
-	LDAP      LDAPConfig                `bson:"ldap" json:"ldap" yaml:"ldap"`
-	NaiveAuth NaiveAuthConfig           `bson:"naive_auth" json:"naive_auth" yaml:"naive_auth"`
+	ID          string                    `bson:"_id" json:"id" yaml:"id"`
+	Splunk      send.SplunkConnectionInfo `bson:"splunk" json:"splunk" yaml:"splunk"`
+	Flags       OperationalFlags          `bson:"flags" json:"flags" yaml:"flags"`
+	Slack       SlackConfig               `bson:"slack" json:"slack" yaml:"slack"`
+	LDAP        LDAPConfig                `bson:"ldap" json:"ldap" yaml:"ldap"`
+	NaiveAuth   NaiveAuthConfig           `bson:"naive_auth" json:"naive_auth" yaml:"naive_auth"`
+	Repobuilder RepobuilderConfig         `bson:"repobuilder" json:"repobuilder" yaml:"repobuilder"`
 }
 
 func FindConfiguration(ctx context.Context, env barque.Environment) (*Configuration, error) {
 	conf := &Configuration{}
 	res := env.DB().Collection(configCollection).FindOne(ctx, bson.M{"_id": configID})
-	err := res.Decode(conf)
-	if err == mongo.ErrNoDocuments {
+
+	if err := res.Decode(conf); err == mongo.ErrNoDocuments {
 		if err := conf.Save(ctx, env); err != nil {
 			return nil, errors.Wrap(err, "problem saving new config")
 		}
@@ -125,7 +126,7 @@ type NaiveUserConfig struct {
 	EmailAddress string   `bson:"email" json:"email" yaml:"email"`
 	Password     string   `bson:"password" json:"password" yaml:"password"`
 	Key          string   `bson:"key" json:"key" yaml:"key"`
-	AccessRoles  []string `bson:"roles" json:"roles" yaml:"roles"`
+	AccessRoles  []string `bson:"roles,omitempty" json:"roles" yaml:"roles"`
 	Invalid      bool     `bson:"invalid" json:"invalid" yaml:"invalid"`
 }
 
@@ -137,4 +138,38 @@ var (
 	naiveUserConfigKeyKey          = bsonutil.MustHaveTag(NaiveUserConfig{}, "Key")
 	naiveUserConfigAccessRolesKey  = bsonutil.MustHaveTag(NaiveUserConfig{}, "AccessRoles")
 	naiveUserConfigInvalidKey      = bsonutil.MustHaveTag(NaiveUserConfig{}, "Invalid")
+)
+
+type RepobuilderConfig struct {
+	Path    string         `bson:"path" json:"path" yaml:"path"`
+	Buckets []BucketConfig `bson:"buckets,omitempty" json:"buckets" yaml:"buckets"`
+}
+
+var (
+	repoBuilderConfPathKey    = bsonutil.MustHaveTag(RepobuilderConfig{}, "Name")
+	repoBuilderConfBucketsKey = bsonutil.MustHaveTag(RepobuilderConfig{}, "Buckets")
+)
+
+func (c *RepobuilderConfig) GetBucketConfig(name string) (*BucketConfig, error) {
+	for idx := range c.Buckets {
+		if c.Buckets[idx].Name == name {
+			return &c.Buckets[idx], nil
+		}
+	}
+
+	return nil, errors.Errorf("could not find bucket configuration matching '%s'", name)
+}
+
+type BucketConfig struct {
+	Name   string `bson:"name" json:"name" yaml:"name"`
+	Key    string `bson:"key" json:"key" yaml:"key"`
+	Secret string `bson:"secret" json:"secret" yaml:"secret"`
+	Token  string `bson:"token" json:"token" yaml:"token"`
+}
+
+var (
+	bucketConfNameKey   = bsonutil.MustHaveTag(BucketConfig{}, "Name")
+	bucketConfKeyKey    = bsonutil.MustHaveTag(BucketConfig{}, "Key")
+	bucketConfSecretKey = bsonutil.MustHaveTag(BucketConfig{}, "Secret")
+	bucketConfTokenKey  = bsonutil.MustHaveTag(BucketConfig{}, "Token")
 )
