@@ -19,6 +19,15 @@ func Admin() cli.Command {
 	return cli.Command{
 		Name: "admin",
 		Subcommands: []cli.Command{
+			Config(),
+		},
+	}
+}
+
+func Config() cli.Command {
+	return cli.Command{
+		Name: "config",
+		Subcommands: []cli.Command{
 			DumpConf(),
 			LoadConf(),
 		},
@@ -27,7 +36,7 @@ func Admin() cli.Command {
 
 func DumpConf() cli.Command {
 	return cli.Command{
-		Name:  "dump-conf",
+		Name:  "dump",
 		Flags: dbFlags(),
 		Action: func(c *cli.Context) error {
 			ctx, cancel := context.WithCancel(context.Background())
@@ -78,7 +87,7 @@ func DumpConf() cli.Command {
 func LoadConf() cli.Command {
 	const pathFlagName = "path"
 	return cli.Command{
-		Name: "load-conf",
+		Name: "load",
 		Flags: dbFlags(cli.StringFlag{
 			Name:  pathFlagName,
 			Usage: "specify the path to upload",

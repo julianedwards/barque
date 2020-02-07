@@ -5,9 +5,11 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/evergreen-ci/barque"
 	"github.com/evergreen-ci/barque/rest"
+	"github.com/evergreen-ci/barque/units"
 	"github.com/evergreen-ci/gimlet"
 	"github.com/mongodb/amboy"
 	amboyRest "github.com/mongodb/amboy/rest"
@@ -19,16 +21,71 @@ import (
 )
 
 func Service() cli.Command {
-	const (
-		adminPortFlagName = "adminPort"
-		servicePortFlag   = "port"
+	return cli.Command{
+		Name:  "service",
+		Usage: "run the barque service",
+		Subcommands: []cli.Command{
+			startWebServer(),
+			startWorkers(),
+		},
+	}
+}
 
-		envVarRESTPort      = "BARQUE_REST_PORT"
-		envVarAdminRESTPort = "BARQUE_ADMIN_REST_PORT"
+func startWorkers() cli.Command {
+	return cli.Command{
+		Name:  "workers",
+		Usage: "start a service that only processes background jobs",
+		Flags: mergeFlags(baseFlags(), dbFlags(), adminFlags()),
+		Action: func(c *cli.Context) error {
+			conf := &barque.Configuration{
+				MongoDBURI:    c.String(dbURIFlag),
+				DatabaseName:  c.String(dbNameFlag),
+				NumWorkers:    c.Int(numWorkersFlag),
+				DisableQueues: c.Bool(disableWorkersFlag),
+				QueueName:     barque.QueueName,
+			}
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			go signalListener(ctx, cancel)
+
+			env, err := barque.NewEnvironment(ctx, conf)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			barque.SetEnvironment(env)
+
+			var adminWait gimlet.WaitFunc
+
+			if !c.Bool(disableAdminFlagName) {
+				adminWait, err = runAdminService(ctx, env, c.Int(adminPortFlagName))
+				if err != nil {
+					return errors.WithStack(err)
+				}
+			}
+
+			if !c.Bool(disableBackgroundJobCreation) {
+				if err := units.StartCrons(ctx, env); err != nil {
+					return errors.WithStack(err)
+				}
+			}
+
+			amboy.WaitInterval(ctx, env.RemoteQueue(), time.Second)
+			doWait(ctx, adminWait)
+
+			return env.Close(ctx)
+		},
+	}
+
+}
+
+func startWebServer() cli.Command {
+	const (
+		servicePortFlag = "port"
 	)
 
 	return cli.Command{
-		Name:  "service",
+		Name:  "web",
 		Usage: "run the barque service",
 		Flags: mergeFlags(baseFlags(), dbFlags(
 			cli.IntFlag{
@@ -36,12 +93,6 @@ func Service() cli.Command {
 				Usage:  "specify a port to run the REST service on",
 				Value:  3000,
 				EnvVar: envVarRESTPort,
-			},
-			cli.IntFlag{
-				Name:   adminPortFlagName,
-				Value:  2285,
-				Usage:  "number of admin port",
-				EnvVar: envVarAdminRESTPort,
 			},
 		)),
 		Action: func(c *cli.Context) error {
@@ -51,10 +102,11 @@ func Service() cli.Command {
 			go signalListener(ctx, cancel)
 
 			conf := &barque.Configuration{
-				MongoDBURI:   c.String(dbURIFlag),
-				DatabaseName: c.String(dbNameFlag),
-				NumWorkers:   c.Int(numWorkersFlag),
-				QueueName:    "barque.service",
+				MongoDBURI:    c.String(dbURIFlag),
+				DatabaseName:  c.String(dbNameFlag),
+				NumWorkers:    c.Int(numWorkersFlag),
+				DisableQueues: c.Bool(disableWorkersFlag),
+				QueueName:     barque.QueueName,
 			}
 
 			env, err := barque.NewEnvironment(ctx, conf)
@@ -63,9 +115,18 @@ func Service() cli.Command {
 			}
 			barque.SetEnvironment(env)
 
-			adminWait, err := runAdminService(ctx, env, c.Int(adminPortFlagName))
-			if err != nil {
-				return errors.WithStack(err)
+			var adminWait gimlet.WaitFunc
+
+			if !c.Bool(disableAdminFlagName) {
+				adminWait, err = runAdminService(ctx, env, c.Int(adminPortFlagName))
+				if err != nil {
+					return errors.WithStack(err)
+				}
+			}
+			if !c.Bool(disableBackgroundJobCreation) {
+				if err := units.StartCrons(ctx, env); err != nil {
+					return errors.WithStack(err)
+				}
 			}
 
 			appWait, err := runRestService(ctx, env, c.Int(servicePortFlag))
@@ -74,7 +135,7 @@ func Service() cli.Command {
 			}
 
 			appWait(ctx)
-			adminWait(ctx)
+			doWait(ctx, adminWait)
 
 			return env.Close(ctx)
 		},
@@ -94,6 +155,14 @@ func signalListener(ctx context.Context, trigger context.CancelFunc) {
 	}
 
 	trigger()
+}
+
+func doWait(ctx context.Context, wait gimlet.WaitFunc) {
+	if wait == nil {
+		return
+	}
+
+	wait(ctx)
 }
 
 func runRestService(ctx context.Context, env barque.Environment, port int) (gimlet.WaitFunc, error) {

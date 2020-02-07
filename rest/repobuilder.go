@@ -35,8 +35,7 @@ func (s *Service) addRepobuilderJob(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	opts := repobuilder.JobOptions{}
-	err := gimlet.GetJSON(r.Body, &opts)
-	if err != nil {
+	if err = gimlet.GetJSON(r.Body, &opts); err != nil {
 		gimlet.WriteResponse(rw, gimlet.MakeJSONErrorResponder(gimlet.ErrorResponse{
 			StatusCode: http.StatusBadRequest,
 			Message:    errors.Wrap(err, "problem parsing input for repobuilder options").Error(),

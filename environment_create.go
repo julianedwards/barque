@@ -28,18 +28,12 @@ func NewEnvironment(ctx context.Context, conf *Configuration) (Environment, erro
 		// init functions have the same
 		// type name
 		env.initDB,
-	}
-
-	if !conf.DisableQueues {
-		initFuncs = append(initFuncs,
-			env.initLocalQueue,
-			env.initRemoteQueue,
-			env.initQueueGroup)
-	}
-
-	initFuncs = append(initFuncs,
+		env.initLocalQueue,
+		env.initRemoteQueue,
+		env.initQueueGroup,
 		env.initJasper,
-		env.initContext)
+		env.initContext,
+	}
 
 	for _, initFn := range initFuncs {
 		if err := initFn(ctx); err != nil {
@@ -72,6 +66,9 @@ func (e *envImpl) initDB(ctx context.Context) error {
 }
 
 func (e *envImpl) initLocalQueue(ctx context.Context) error {
+	if e.conf.DisableQueues {
+		return nil
+	}
 	e.localQueue = queue.NewLocalLimitedSize(e.conf.NumWorkers, 1024)
 
 	e.RegisterCloser("local-queue", true, func(ctx context.Context) error {
@@ -101,9 +98,14 @@ func (e *envImpl) initLocalQueue(ctx context.Context) error {
 }
 
 func (e *envImpl) initRemoteQueue(ctx context.Context) error {
+	size := e.conf.NumWorkers
+	if e.conf.DisableQueues {
+		size = 0
+	}
+
 	opts := e.conf.GetQueueOptions()
 	args := queue.MongoDBQueueCreationOptions{
-		Size:    e.conf.NumWorkers,
+		Size:    size,
 		Name:    e.conf.QueueName,
 		Ordered: false,
 		Client:  e.client,
@@ -115,7 +117,7 @@ func (e *envImpl) initRemoteQueue(ctx context.Context) error {
 		return errors.Wrap(err, "problem setting main queue backend")
 	}
 
-	if err = rq.SetRunner(pool.NewAbortablePool(e.conf.NumWorkers, rq)); err != nil {
+	if err = rq.SetRunner(pool.NewAbortablePool(size, rq)); err != nil {
 		return errors.Wrap(err, "problem configuring worker pool for main remote queue")
 	}
 	e.remoteQueue = rq
@@ -146,10 +148,15 @@ func (e *envImpl) initRemoteQueue(ctx context.Context) error {
 }
 
 func (e *envImpl) initQueueGroup(ctx context.Context) error {
+	size := e.conf.NumWorkers
+	if e.conf.DisableQueues {
+		size = 0
+	}
+
 	opts := e.conf.GetQueueGroupOptions()
 	args := queue.MongoDBQueueGroupOptions{
 		Prefix:                    e.conf.QueueName,
-		DefaultWorkers:            e.conf.NumWorkers,
+		DefaultWorkers:            size,
 		Ordered:                   false,
 		BackgroundCreateFrequency: 10 * time.Minute,
 		PruneFrequency:            10 * time.Minute,

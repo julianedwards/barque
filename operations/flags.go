@@ -12,12 +12,18 @@ import (
 // Flag Name Constants
 
 const (
-	configFlag     = "config"
-	numWorkersFlag = "workers"
-	dbURIFlag      = "dbUri"
-	dbNameFlag     = "dbName"
+	configFlag                   = "config"
+	numWorkersFlag               = "workers"
+	dbURIFlag                    = "dbUri"
+	dbNameFlag                   = "dbName"
+	disableWorkersFlag           = "disableRemoteWorkers"
+	disableAdminFlagName         = "disableAdmin"
+	disableBackgroundJobCreation = "disableBackgroundJobCreation"
+	adminPortFlagName            = "adminPort"
+	flagNameflag                 = "flag"
 
-	flagNameflag = "flag"
+	envVarRESTPort      = "BARQUE_REST_PORT"
+	envVarAdminRESTPort = "BARQUE_ADMIN_REST_PORT"
 )
 
 ////////////////////////////////////////////////////////////////////////
@@ -80,9 +86,33 @@ func setFlagOrFirstPositional(name string) cli.BeforeFunc {
 
 func baseFlags(flags ...cli.Flag) []cli.Flag {
 	return append(flags,
+		cli.BoolFlag{
+			Name:  disableWorkersFlag,
+			Usage: "when specified no background workers for the remote queues will run",
+		},
+		cli.BoolFlag{
+			Name:  disableBackgroundJobCreation,
+			Usage: "when specified this process will not start background job submission",
+		},
 		cli.IntFlag{
 			Name:  numWorkersFlag,
 			Usage: "specify the number of worker jobs this process will have",
 			Value: 2,
 		})
+}
+
+func adminFlags(flags ...cli.Flag) []cli.Flag {
+	return append(flags,
+		cli.IntFlag{
+			Name:   adminPortFlagName,
+			Value:  2285,
+			Usage:  "number of admin port",
+			EnvVar: envVarAdminRESTPort,
+		},
+		cli.BoolFlag{
+			Name:  disableAdminFlagName,
+			Usage: "disable the background (localhost) administration server",
+		},
+	)
+
 }

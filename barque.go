@@ -8,9 +8,7 @@ import (
 	"time"
 )
 
-const (
-	ShortDateFormat = "2006-01-02T15:04"
-)
+const ()
 
 // BuildRevision stores the commit in the git repository at build time
 // and is specified with -ldflags at build time
@@ -20,5 +18,6 @@ const (
 	AuthTokenCookie  = "barque-token"
 	APIUserHeader    = "Api-User"
 	APIKeyHeader     = "Api-Key"
+	QueueName        = "barque.service"
 	TokenExpireAfter = time.Hour
 )
