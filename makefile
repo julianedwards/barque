@@ -1,7 +1,7 @@
 # start project configuration
 name := barque
 buildDir := build
-packages := $(name) model rest units
+packages := $(name) model rest units operations
 orgPath := github.com/evergreen-ci
 projectPath := $(orgPath)/$(name)
 # end project configuration
