@@ -66,7 +66,7 @@ func (s *Service) addRepobuilderJob(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = s.Environment.RemoteQueue().Put(r.Context(), job); err != nil {
+	if err = s.Environment.RemoteQueue().Put(ctx, job); err != nil {
 		gimlet.WriteResponse(rw, gimlet.MakeJSONErrorResponder(gimlet.ErrorResponse{
 			StatusCode: http.StatusBadRequest,
 			Message:    errors.Wrap(err, "problem building enquing job").Error(),

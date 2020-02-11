@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/evergreen-ci/barque"
-	"github.com/evergreen-ci/cedar"
 	"github.com/evergreen-ci/gimlet"
 	"github.com/evergreen-ci/utility"
 	"github.com/mongodb/anser/bsonutil"
@@ -195,7 +194,7 @@ func GetLoginCache(token string) (gimlet.User, bool, error) {
 		return nil, false, errors.Wrap(err, "problem getting user from cache")
 	}
 
-	if time.Since(user.LoginCache.TTL) > cedar.TokenExpireAfter {
+	if time.Since(user.LoginCache.TTL) > barque.TokenExpireAfter {
 		return user, false, nil
 	}
 	return user, true, nil
