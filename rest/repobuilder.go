@@ -52,9 +52,9 @@ func (s *Service) addRepobuilderJob(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	opts.Key = bucketConfig.Key
-	opts.Secret = bucketConfig.Secret
-	opts.Token = bucketConfig.Token
+	opts.AWSKey = bucketConfig.Key
+	opts.AWSSecret = bucketConfig.Secret
+	opts.AWSToken = bucketConfig.Token
 	opts.Configuration.WorkSpace = conf.Repobuilder.Path
 
 	job, err := repobuilder.NewRepoBuilderJob(opts)
