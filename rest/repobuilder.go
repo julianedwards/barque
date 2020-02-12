@@ -69,7 +69,7 @@ func (s *Service) addRepobuilderJob(rw http.ResponseWriter, r *http.Request) {
 	if err = s.Environment.RemoteQueue().Put(ctx, job); err != nil {
 		gimlet.WriteResponse(rw, gimlet.MakeJSONErrorResponder(gimlet.ErrorResponse{
 			StatusCode: http.StatusBadRequest,
-			Message:    errors.Wrap(err, "problem building enquing job").Error(),
+			Message:    errors.Wrap(err, "problem building adding job to queue").Error(),
 		}))
 		return
 	}
@@ -88,8 +88,9 @@ func (s *Service) addRepobuilderJob(rw http.ResponseWriter, r *http.Request) {
 // GET /repobuilder/check/{job_id}
 
 type checkRepobuilderJobOutput struct {
-	JobStatus   amboy.JobStatusInfo `json:"job_status"`
-	JobTiming   amboy.JobTimeInfo   `json:"job_timing"`
+	ID          string              `json:"id"`
+	JobStatus   amboy.JobStatusInfo `json:"status"`
+	JobTiming   amboy.JobTimeInfo   `json:"timing"`
 	QueueStatus amboy.QueueStats    `json:"queue_status"`
 	HasErrors   bool                `json:"has_errors"`
 	Error       string              `json:"error,omitempty"`
@@ -108,6 +109,7 @@ func (s *Service) checkRepobuilderJob(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 	output := &checkRepobuilderJobOutput{
+		ID:          job.ID(),
 		JobStatus:   job.Status(),
 		JobTiming:   job.TimeInfo(),
 		QueueStatus: queue.Stats(ctx),
