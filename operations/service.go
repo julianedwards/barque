@@ -55,6 +55,10 @@ func startWorkers() cli.Command {
 			}
 			barque.SetEnvironment(env)
 
+			if err = setupLogging(ctx, env); err != nil {
+				return errors.WithStack(err)
+			}
+
 			var adminWait gimlet.WaitFunc
 
 			if !c.Bool(disableAdminFlagName) {
@@ -114,6 +118,10 @@ func startWebServer() cli.Command {
 				return errors.WithStack(err)
 			}
 			barque.SetEnvironment(env)
+
+			if err = setupLogging(ctx, env); err != nil {
+				return errors.WithStack(err)
+			}
 
 			var adminWait gimlet.WaitFunc
 

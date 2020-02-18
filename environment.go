@@ -187,6 +187,7 @@ func (e *envImpl) Close(ctx context.Context) error {
 
 	for idx, closer := range e.closers {
 		if !closer.background && closer.closer != nil {
+			wg.Add(1)
 			go func(name string, n int, fn CloserFunc) {
 				defer wg.Done()
 				grip.Info(message.Fields{

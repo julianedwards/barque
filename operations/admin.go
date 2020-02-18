@@ -46,6 +46,7 @@ func DumpConf() cli.Command {
 			conf := &barque.Configuration{
 				MongoDBURI:    c.String(dbURIFlag),
 				DatabaseName:  c.String(dbNameFlag),
+				NumWorkers:    1,
 				DisableQueues: true,
 			}
 
@@ -115,13 +116,13 @@ func LoadConf() cli.Command {
 			if err = yaml.Unmarshal(data, cfg); err != nil {
 				return errors.Wrap(err, "problem marshaling data from file")
 			}
-
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
 			conf := &barque.Configuration{
 				MongoDBURI:    c.String(dbURIFlag),
 				DatabaseName:  c.String(dbNameFlag),
+				NumWorkers:    1,
 				DisableQueues: true,
 			}
 
