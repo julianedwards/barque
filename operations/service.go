@@ -87,7 +87,7 @@ func startWebServer() cli.Command {
 	return cli.Command{
 		Name:  "web",
 		Usage: "run the barque service",
-		Flags: mergeFlags(baseFlags(), dbFlags(
+		Flags: mergeFlags(baseFlags(), adminFlags(), dbFlags(
 			cli.IntFlag{
 				Name:   joinFlagNames(servicePortFlag, "p"),
 				Usage:  "specify a port to run the REST service on",
@@ -120,18 +120,18 @@ func startWebServer() cli.Command {
 			if !c.Bool(disableAdminFlagName) {
 				adminWait, err = runAdminService(ctx, env, c.Int(adminPortFlagName))
 				if err != nil {
-					return errors.WithStack(err)
+					return errors.Wrap(err, "failed to start admin service")
 				}
 			}
 			if !c.Bool(disableBackgroundJobCreation) {
 				if err := units.StartCrons(ctx, env); err != nil {
-					return errors.WithStack(err)
+					return errors.Wrap(err, "failed to start crons")
 				}
 			}
 
 			appWait, err := runRestService(ctx, env, c.Int(servicePortFlag))
 			if err != nil {
-				return errors.WithStack(err)
+				return errors.Wrap(err, "failed to start rest service")
 			}
 
 			appWait(ctx)

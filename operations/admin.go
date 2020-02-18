@@ -32,6 +32,7 @@ func Config() cli.Command {
 			LoadConf(),
 		},
 	}
+
 }
 
 func DumpConf() cli.Command {

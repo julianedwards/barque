@@ -146,7 +146,7 @@ type RepobuilderConfig struct {
 }
 
 var (
-	repoBuilderConfPathKey    = bsonutil.MustHaveTag(RepobuilderConfig{}, "Name")
+	repoBuilderConfPathKey    = bsonutil.MustHaveTag(RepobuilderConfig{}, "Path")
 	repoBuilderConfBucketsKey = bsonutil.MustHaveTag(RepobuilderConfig{}, "Buckets")
 )
 
