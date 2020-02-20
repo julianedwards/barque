@@ -3,7 +3,7 @@ package rest
 import (
 	"net/http"
 
-	"github.com/evergreen-ci/cedar"
+	"github.com/evergreen-ci/barque"
 	"github.com/evergreen-ci/gimlet"
 	"github.com/mongodb/amboy"
 )
@@ -24,7 +24,7 @@ func (s *Service) statusHandler(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	resp := &StatusResponse{
-		Revision: cedar.BuildRevision,
+		Revision: barque.BuildRevision,
 	}
 
 	if queue := s.Environment.RemoteQueue(); queue != nil {
