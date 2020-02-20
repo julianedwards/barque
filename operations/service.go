@@ -179,10 +179,6 @@ func runRestService(ctx context.Context, env barque.Environment, port int) (giml
 		return nil, errors.WithStack(err)
 	}
 
-	if err := app.SetHost("localhost"); err != nil {
-		return nil, errors.WithStack(err)
-	}
-
 	if err := app.SetPort(port); err != nil {
 		return nil, errors.WithStack(err)
 	}
