@@ -103,6 +103,7 @@ func (s *Service) addRoutes(app *gimlet.APIApp) {
 
 	app.AddRoute("/admin/login").Version(1).Get().Handler(s.fetchUserToken)
 	app.AddRoute("/admin/status").Version(1).Get().Handler(s.statusHandler)
+	app.AddRoute("/admin/login").Version(1).Get().Handler(s.fetchUserToken)
 	app.AddRoute("/repobuilder").Version(1).Post().Wrap(checkUser).Handler(s.addRepobuilderJob)
 	app.AddRoute("/repobuilder/check/{job_id}").Version(1).Post().Wrap(checkUser).Handler(s.checkRepobuilderJob)
 }
