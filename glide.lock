@@ -6,7 +6,7 @@ imports:
 - name: github.com/evergreen-ci/pail
   version: 77641ef9b25997311b0e788a3344c235ed76bc3b
 - name: github.com/mongodb/amboy
-  version: 4f089ad3c37346a21d0b69b6d3c3523628a72a29
+  version: 9699552bb4d414f918796038340311932c2f11a8
 - name: github.com/mongodb/grip
   version: 505d1051058d81836ddb3cb839ba06009588a14e
 - name: github.com/mongodb/anser
