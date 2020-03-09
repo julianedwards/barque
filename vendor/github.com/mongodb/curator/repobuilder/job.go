@@ -160,7 +160,7 @@ func NewRepoBuilderJob(opts JobOptions) (amboy.Job, error) {
 	j.SetID(fmt.Sprintf("%s.distro.%s.repo.%s", jobName, opts.Distro.Type, opts.JobID))
 
 	repoName := j.getPackageLocation()
-	scopes := []string{}
+	scopes := []string{j.Distro.Bucket}
 	for _, repo := range opts.Distro.Repos {
 		switch opts.Distro.Type {
 		case RPM:
@@ -364,7 +364,7 @@ func (j *repoBuilderJob) signFile(fileName, archiveExtension string, overwrite b
 			"repo":      j.Distro.Name,
 			"version":   j.release.String(),
 			"extension": archiveExtension,
-			"message":   "extension has leading dot, which is ususally problem",
+			"message":   "extension has leading dot, which is usually problem",
 		})
 
 	grip.CriticalWhen(overwrite && len(archiveExtension) != 0,
