@@ -464,6 +464,12 @@ func (j *repoBuilderJob) processPackages(ctx context.Context) error {
 			continue
 		}
 		if resp.StatusCode != 200 {
+			data, _ := ioutil.ReadAll(resp.Body)
+			grip.Info(message.Fields{
+				"name": "julian:",
+				"msg":  string(data),
+				"path": path,
+			})
 			catcher.Errorf("got status %d downloading packages", resp.StatusCode)
 			continue
 		}
